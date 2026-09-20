@@ -22,6 +22,7 @@ export const api = {
   portfolio: () => req('/portfolio'),
   ledger: () => req('/ledger'),
   leaderboard: () => req('/leaderboard'),
+  pay: (body) => req('/pay', { method: 'POST', body }),
   suggestMarket: (body) => req('/suggestions/market', { method: 'POST', body }),
   mySuggestions: () => req('/suggestions/mine'),
   admin: {

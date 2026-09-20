@@ -4,6 +4,7 @@ import Login from './pages/Login.jsx';
 import Markets from './pages/Markets.jsx';
 import MarketDetail from './pages/MarketDetail.jsx';
 import Portfolio from './pages/Portfolio.jsx';
+import Pay from './pages/Pay.jsx';
 import Suggest from './pages/Suggest.jsx';
 import Admin from './pages/Admin.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
@@ -23,12 +24,14 @@ const I = {
   board: <svg viewBox="0 0 16 16"><path d="M2 14V8h3v6zM6.5 14V5h3v9zM11 14V2h3v12z" fill="currentColor"/></svg>,
   ledger: <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.5"/></svg>,
   quill: <svg viewBox="0 0 16 16"><path d="M12 2l2 2-8 8-3 1 1-3z M10 4l2 2" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  pay: <svg viewBox="0 0 16 16"><circle cx="5.5" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M5.5 5.5v5M4 6.8h3M4 9.2h3M10 8h4.5m-2-2l2 2-2 2" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>,
   paint: <svg viewBox="0 0 16 16"><rect x="3" y="9" width="10" height="5" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M8 9V5.5M8 5.5a2.5 2.5 0 1 1 2.5-2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg>,
 };
 
 const NAV = [
   { to: '/', label: 'The Book', icon: I.book },
   { to: '/portfolio', label: 'Positions', icon: I.purse },
+  { to: '/pay', label: 'Pay', icon: I.pay },
   { to: '/board', label: 'The Board', icon: I.board },
   { to: '/ledger', label: 'Ledger', icon: I.ledger },
   { to: '/suggest', label: 'Suggest', icon: I.quill },
@@ -61,6 +64,7 @@ export default function App() {
   const mm = route.match(/^\/markets\/(\d+)/);
   if (mm) { page = <MarketDetail id={mm[1]} />; cardTitle = 'Moorket'; }
   else if (route === '/portfolio') { page = <Portfolio />; cardTitle = 'Positions'; }
+  else if (route === '/pay') { page = <Pay />; cardTitle = 'Pay'; }
   else if (route === '/board') { page = <Leaderboard />; cardTitle = 'The Board'; }
   else if (route === '/ledger') { page = <Ledger />; cardTitle = 'Ledger'; }
   else if (route === '/suggest') { page = <Suggest />; cardTitle = 'Suggest'; }

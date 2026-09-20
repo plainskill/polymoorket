@@ -186,6 +186,22 @@ app.get('/api/ledger', requireUser, (req, res) => {
   res.json({ entries: db.prepare('SELECT * FROM ledger WHERE user_id = ? ORDER BY id DESC LIMIT 200').all(req.user.id) });
 });
 
+app.post('/api/pay', requireUser, (req, res) => {
+  const to = db.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').get(String(req.body?.to || '').trim());
+  if (!to || !to.active) return res.status(404).json({ error: 'No such punter' });
+  if (to.id === req.user.id) return res.status(400).json({ error: 'You can\'t pay yourself' });
+  const amount = Math.floor(Number(req.body?.amount));
+  if (!Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: 'Amount must be a positive whole number of beetcoin' });
+  if (req.user.balance < amount) return res.status(402).json({ error: `Not enough beetcoin — you have ${req.user.balance}` });
+  const note = String(req.body?.note || '').trim().slice(0, 140);
+  const pay = db.transaction(() => {
+    credit(req.user.id, -amount, 'pay', `@${to.username}`, note);
+    credit(to.id, amount, 'pay', `@${req.user.username}`, note);
+  });
+  pay();
+  res.json({ ok: true, balance: req.user.balance - amount });
+});
+
 app.get('/api/leaderboard', requireUser, (req, res) => {
   const rows = db.prepare(
     `SELECT id, username, balance FROM users WHERE active = 1 ORDER BY balance DESC`
