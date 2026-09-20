@@ -57,25 +57,27 @@ function AdminMarkets() {
     <div>
       <button onClick={() => setShowNew(s => !s)}>{showNew ? 'close' : 'open a new moorket'}</button>
       {showNew && <NewMarket users={users} groups={groups} onDone={() => { setShowNew(false); load(); }} />}
-      <table className="table">
-        <thead><tr><th></th><th>moorket</th><th className="num">pool</th><th>status</th><th>who can see it</th><th></th></tr></thead>
-        <tbody>
-          {markets.map(m => (
-            <tr key={m.id}>
-              <td className="mnum">{m.number}</td>
-              <td className="clickable" onClick={() => navigate(`/markets/${m.id}`)}>{m.title}</td>
-              <td className="num">₿{m.total_pool}</td>
-              <td><span className={`status st-${m.status}`}>{m.status}</span></td>
-              <td className="dim">
-                {m.visibility === 'all' ? 'everyone' :
-                  [m.allowed_users.map(u => u.username).join(', '), m.allowed_groups.map(g => `[${g.name}]`).join(', ')]
-                    .filter(Boolean).join(' + ') || 'nobody?!'}
-              </td>
-              <td><VisibilityEditor m={m} users={users} groups={groups} onDone={load} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ul className="admin-list">
+        {markets.map(m => (
+          <li key={m.id} className="arow">
+            <div className="arow-main">
+              <span className="mnum">{m.number}</span>
+              <span className="arow-title clickable" onClick={() => navigate(`/markets/${m.id}`)}>{m.title}</span>
+              <span className={`status st-${m.status}`}>{m.status}</span>
+            </div>
+            <div className="arow-sub">
+              <span className="dim">pool ₿{m.total_pool} · {m.bettors} {m.bettors === 1 ? 'bettor' : 'bettors'}</span>
+              <span className="dim">
+                {m.visibility === 'all' ? 'everyone' : (() => {
+                  const who = [...m.allowed_users.map(u => u.username), ...m.allowed_groups.map(g => `[${g.name}]`)].join(', ');
+                  return who ? `restricted → ${who}` : 'restricted → nobody can see this!';
+                })()}
+              </span>
+              <VisibilityEditor m={m} users={users} groups={groups} onDone={load} />
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -181,16 +183,17 @@ function Punters() {
         <button type="submit">issue account</button>
         {err && <span className="err">{err}</span>}
       </form>
-      <table className="table">
-        <thead><tr><th>punter</th><th>role</th><th className="num">balance</th><th>state</th><th></th></tr></thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id} className={u.active ? '' : 'inactive'}>
-              <td><b>{u.username}</b></td>
-              <td className="dim">{u.role}</td>
-              <td className="num">₿{u.balance}</td>
-              <td>{u.active ? 'in' : 'barred'}</td>
-              <td className="actions">
+      <ul className="admin-list">
+        {users.map(u => (
+          <li key={u.id} className={`arow ${u.active ? '' : 'inactive'}`}>
+            <div className="arow-main">
+              <b>{u.username}</b>
+              <span className="dim">{u.role}</span>
+              <span className={`status ${u.active ? 'st-open' : 'st-cancelled'}`}>{u.active ? 'in' : 'barred'}</span>
+            </div>
+            <div className="arow-sub">
+              <span className="num">₿{u.balance}</span>
+              <span className="actions">
                 <button className="linkish" onClick={async () => {
                   const amt = prompt(`grant/deduct beetcoin for ${u.username} (negative to deduct):`, '100');
                   if (amt !== null && Number(amt) !== 0) { await api.admin.patchUser(u.id, { adjust: Number(amt) }); load(); }
@@ -205,11 +208,11 @@ function Punters() {
                 <button className="linkish danger" onClick={async () => {
                   await api.admin.patchUser(u.id, { active: !u.active }); load();
                 }}>{u.active ? 'bar' : 'readmit'}</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -240,6 +240,22 @@ label > span, .outcomes-edit > span {
 }
 .inline-form { display: flex; gap: .6rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
 .inline-form input { width: auto; flex: 0 1 180px; }
+.inline-form input[type=number] { flex: 0 0 90px; }
+
+/* admin lists — same row grammar as the book, not tables */
+.admin-list { list-style: none; margin: .8rem 0 0; padding: 0; }
+.arow { border-bottom: 1px dotted var(--ink); padding: .6rem .2rem; }
+.arow.inactive { opacity: .45; }
+.arow-main { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+.arow-title { font-weight: 700; flex: 1; min-width: 12ch; }
+.arow-sub {
+  display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+  font-size: 12px; margin-top: .25rem; padding-left: .2rem;
+}
+.arow-sub .actions { margin-left: auto; }
+.arow-sub .visedit { flex-basis: 100%; margin-top: .3rem; }
+.clickable { cursor: pointer; }
+.clickable:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ============ content ============ */
 
