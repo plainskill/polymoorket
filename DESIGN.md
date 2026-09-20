@@ -17,7 +17,7 @@ One bit. No color anywhere.
 
 ## Type
 
-- **Display / menus / numerals:** Silkscreen (self-hosted via @fontsource), uppercase, the Chicago stand-in. Used for the wordmark, menu bar, card titles, buttons, all figures and balances.
+- **Display / menus / numerals:** Geist Pixel (self-hosted via @fontsource), uppercase, the Chicago stand-in. Used for the wordmark, menu bar, card titles, buttons, all figures and balances.
 - **Body / input text:** Geneva stack (`Geneva, Verdana, 'Lucida Grande', system-ui`). Descriptions, explanations, feed text.
 
 ## Materials & grammar

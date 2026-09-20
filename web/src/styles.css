@@ -1,12 +1,11 @@
-@import '@fontsource/silkscreen/400.css';
-@import '@fontsource/silkscreen/700.css';
+@import '@fontsource/geist-pixel/400.css';
 
 /* ============ the shoebox book: one bit, card stock, hand-drawn borders ============ */
 
 :root {
   --ink: #000;
   --paper: #fff;
-  --pixel: 'Silkscreen', 'Courier New', monospace;
+  --pixel: 'Geist Pixel', monospace;
   --body: Geneva, Verdana, 'Lucida Grande', system-ui, sans-serif;
 
   /* stipple fields — grays are drawn as dots, never flat */
@@ -200,7 +199,7 @@ input, textarea, select { caret-color: var(--ink); }
   border-top: 2px solid var(--ink);
   background: var(--paper);
   padding: .5rem;
-  font-family: var(--pixel); font-size: 12px;
+  font-family: var(--pixel); font-size: 12px; text-transform: uppercase;
 }
 .pager .stackicon svg { width: 20px; height: 20px; display: block; }
 .pager-btn svg { width: 12px; height: 12px; display: block; }
@@ -308,7 +307,7 @@ h3.subhead {
 .mmeta { display: block; font-size: 12px; opacity: .6; }
 .modds { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
 .ochip {
-  font-family: var(--pixel); font-size: 11px;
+  font-family: var(--pixel); font-size: 11px; text-transform: uppercase;
   border: 2px solid var(--ink); border-radius: var(--wob4);
   padding: .2em .55em; white-space: nowrap;
 }
