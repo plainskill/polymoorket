@@ -15,6 +15,9 @@
   --st3: radial-gradient(var(--ink) 1px, transparent 1px) 0 0 / 4px 4px;
   --st4: radial-gradient(var(--ink) 1.2px, transparent 1.2px) 0 0 / 3px 3px;
 
+  /* pencil-shade hatch for bar fills */
+  --hatch: repeating-linear-gradient(-45deg, var(--ink) 0 1.6px, transparent 1.6px 4.5px);
+
   /* hand-drawn card radii */
   --wob1: 255px 15px 225px 15px / 15px 225px 15px 255px;
   --wob2: 15px 225px 15px 255px / 225px 15px 255px 15px;
@@ -341,7 +344,7 @@ h3.subhead {
 .olabel { font-family: var(--pixel); font-size: 15px; font-weight: 700; text-transform: uppercase; }
 .opct { font-family: var(--pixel); font-size: 15px; }
 .obar { height: 10px; border: 1.5px solid var(--ink); border-radius: var(--wob4); margin: .35rem 0; overflow: hidden; }
-.obar i { display: block; height: 100%; background-image: var(--st4); }
+.obar i { display: block; height: 100%; background-image: var(--hatch); }
 .outcome.winner .obar i { background: var(--ink); }
 .osub { display: flex; justify-content: space-between; font-size: 12px; }
 .stake { display: flex; gap: .6rem; margin-top: .55rem; align-items: center; }
@@ -414,7 +417,7 @@ tr.inactive { opacity: .45; }
 .board .rank { font-family: var(--pixel); font-size: 18px; width: 1.4em; text-align: right; }
 .board .bname { width: 140px; }
 .board .bbar { flex: 1; height: 12px; border: 1.5px solid var(--ink); border-radius: var(--wob4); overflow: hidden; }
-.board .bbar i { display: block; height: 100%; background-image: var(--st4); }
+.board .bbar i { display: block; height: 100%; background-image: var(--hatch); }
 .board li:first-child .bbar i { background: var(--ink); }
 
 /* ============ login — the welcome card ============ */
