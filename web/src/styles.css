@@ -177,6 +177,20 @@ input, textarea, select { caret-color: var(--ink); }
 .mini-board .bname { flex: 1; }
 .widget .btn.wide { margin: 0 .8rem; width: calc(100% - 1.6rem); }
 
+/* moorket chatter */
+.chat-list {
+  list-style: none; margin: 0; padding: .5rem .8rem;
+  max-height: 220px; overflow-y: auto; font-size: 12px;
+}
+.chat-list li { padding: .3rem 0; border-bottom: 1px dotted var(--ink); }
+.chat-list li:last-child { border-bottom: 0; }
+.chat-who { display: flex; justify-content: space-between; gap: .5rem; }
+.chat-who i { font-family: var(--pixel); font-size: 9px; color: var(--ink); opacity: .6; font-style: normal; }
+.chat-body { display: block; overflow-wrap: break-word; }
+.chat-form { display: flex; gap: .4rem; padding: .4rem .8rem 0; }
+.chat-form input { flex: 1; min-width: 0; font-size: 12px; padding: .35rem .5rem; }
+.chat-form .btn { padding: .3rem .7rem; }
+
 /* pager — the bottom stack chrome */
 .pager {
   display: flex; align-items: center; justify-content: center; gap: 1rem;

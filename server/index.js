@@ -74,7 +74,7 @@ function shapeMarket(m, user) {
   const bettors = db.prepare('SELECT COUNT(DISTINCT user_id) c FROM bets WHERE market_id = ?').get(m.id).c;
   return {
     id: m.id, number: m.number, title: m.title, description: m.description,
-    status: m.status, visibility: m.visibility, closes_at: m.closes_at,
+    status: m.status, visibility: m.visibility, closes_at: normTs(m.closes_at),
     created_at: m.created_at, resolved_at: m.resolved_at, resolution_note: m.resolution_note,
     winning_outcome_id: m.winning_outcome_id, total_pool: total, bettors,
     outcomes: outcomes.map(o => ({
@@ -153,6 +153,47 @@ app.post('/api/markets/:id/bets', requireUser, (req, res) => {
   });
   place();
   res.json({ ok: true, balance: req.user.balance - amount });
+});
+
+// ---------- moorket chatter ----------
+const chatSubs = new Map(); // market_id -> Set<res>
+function chatPush(marketId, msg) {
+  const subs = chatSubs.get(marketId);
+  if (!subs) return;
+  const payload = `data: ${JSON.stringify(msg)}\n\n`;
+  for (const res of subs) res.write(payload);
+}
+
+const chatShape = `SELECT c.id, c.body, c.created_at, u.username FROM chat_messages c JOIN users u ON u.id = c.user_id`;
+
+app.get('/api/markets/:id/chat', requireUser, (req, res) => {
+  const m = db.prepare('SELECT * FROM markets WHERE id = ?').get(req.params.id);
+  if (!m || !marketVisibleTo(m.id, req.user)) return res.status(404).json({ error: 'Moorket not found' });
+  const messages = db.prepare(`${chatShape} WHERE c.market_id = ? ORDER BY c.id DESC LIMIT 60`).all(m.id).reverse();
+  res.json({ messages });
+});
+
+app.post('/api/markets/:id/chat', requireUser, (req, res) => {
+  const m = db.prepare('SELECT * FROM markets WHERE id = ?').get(req.params.id);
+  if (!m || !marketVisibleTo(m.id, req.user)) return res.status(404).json({ error: 'Moorket not found' });
+  const body = String(req.body?.body || '').trim().slice(0, 280);
+  if (!body) return res.status(400).json({ error: 'Say something' });
+  const info = db.prepare('INSERT INTO chat_messages (market_id, user_id, body) VALUES (?,?,?)').run(m.id, req.user.id, body);
+  const msg = db.prepare(`${chatShape} WHERE c.id = ?`).get(info.lastInsertRowid);
+  chatPush(m.id, msg);
+  res.json({ ok: true, message: msg });
+});
+
+app.get('/api/markets/:id/chat/stream', requireUser, (req, res) => {
+  const m = db.prepare('SELECT * FROM markets WHERE id = ?').get(req.params.id);
+  if (!m || !marketVisibleTo(m.id, req.user)) return res.status(404).json({ error: 'Moorket not found' });
+  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  res.write('retry: 3000\n\n');
+  let subs = chatSubs.get(m.id);
+  if (!subs) chatSubs.set(m.id, subs = new Set());
+  subs.add(res);
+  const beat = setInterval(() => res.write(': beat\n\n'), 25000);
+  req.on('close', () => { clearInterval(beat); subs.delete(res); if (!subs.size) chatSubs.delete(m.id); });
 });
 
 app.post('/api/markets/:id/suggest-resolution', requireUser, (req, res) => {
@@ -345,6 +386,12 @@ app.get('/api/admin/markets', requireAdmin, (req, res) => {
   res.json({ markets: shaped });
 });
 
+function normTs(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d) ? null : d.toISOString();
+}
+
 app.post('/api/admin/markets', requireAdmin, (req, res) => {
   const title = String(req.body?.title || '').trim();
   const description = String(req.body?.description || '').trim();
@@ -359,7 +406,7 @@ app.post('/api/admin/markets', requireAdmin, (req, res) => {
     const info = db.prepare(
       `INSERT INTO markets (number, title, description, visibility, created_by, closes_at)
        VALUES (?,?,?,?,?,?)`
-    ).run(nextNumber(), title, description, visibility, req.user.id, req.body?.closes_at || null);
+    ).run(nextNumber(), title, description, visibility, req.user.id, normTs(req.body?.closes_at));
     const mid = info.lastInsertRowid;
     outcomes.forEach((label, i) => db.prepare('INSERT INTO outcomes (market_id, label, sort) VALUES (?,?,?)').run(mid, label, i));
     if (visibility === 'restricted') {
@@ -377,7 +424,7 @@ app.patch('/api/admin/markets/:id', requireAdmin, (req, res) => {
   const { title, description, visibility, status, closes_at, user_ids, group_ids } = req.body || {};
   if (title !== undefined) db.prepare('UPDATE markets SET title = ? WHERE id = ?').run(String(title), m.id);
   if (description !== undefined) db.prepare('UPDATE markets SET description = ? WHERE id = ?').run(String(description), m.id);
-  if (closes_at !== undefined) db.prepare('UPDATE markets SET closes_at = ? WHERE id = ?').run(closes_at || null, m.id);
+  if (closes_at !== undefined) db.prepare('UPDATE markets SET closes_at = ? WHERE id = ?').run(normTs(closes_at), m.id);
   if (status !== undefined && ['open', 'locked'].includes(status) && m.status !== 'resolved' && m.status !== 'cancelled')
     db.prepare('UPDATE markets SET status = ? WHERE id = ?').run(status, m.id);
   if (visibility !== undefined && ['all', 'restricted'].includes(visibility))

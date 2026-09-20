@@ -8,6 +8,7 @@ import Pay from './pages/Pay.jsx';
 import Suggest from './pages/Suggest.jsx';
 import Admin from './pages/Admin.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
+import MarketChat from './pages/MarketChat.jsx';
 
 const Ctx = createContext(null);
 export const useApp = () => useContext(Ctx);
@@ -109,6 +110,7 @@ export default function App() {
           </main>
 
           <aside className="rail">
+            {mm && <MarketChat key={mm[1]} marketId={Number(mm[1])} />}
             <Purse />
             <MiniBoard />
           </aside>
@@ -207,7 +209,9 @@ export function Empty({ text }) {
 
 export function fmtTime(s) {
   if (!s) return '—';
-  return new Date(s + 'Z').toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const d = new Date(String(s).includes('T') ? s : s + 'Z');
+  if (isNaN(d)) return '—';
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 export function pct(x) {

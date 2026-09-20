@@ -19,6 +19,8 @@ export const api = {
   bet: (id, outcome_id, amount) => req(`/markets/${id}/bets`, { method: 'POST', body: { outcome_id, amount } }),
   suggestResolution: (id, outcome_id, explanation) =>
     req(`/markets/${id}/suggest-resolution`, { method: 'POST', body: { outcome_id, explanation } }),
+  chat: (id) => req(`/markets/${id}/chat`),
+  postChat: (id, body) => req(`/markets/${id}/chat`, { method: 'POST', body: { body } }),
   portfolio: () => req('/portfolio'),
   ledger: () => req('/ledger'),
   leaderboard: () => req('/leaderboard'),
