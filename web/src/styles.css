@@ -79,7 +79,7 @@ input, textarea, select { caret-color: var(--ink); }
 .menubar .balance { font-weight: 700; }
 .menubar .uname { font-family: var(--body); text-transform: none; font-size: 12px; }
 
-.table {
+.tabletop {
   flex: 1;
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr) 240px;
@@ -366,13 +366,13 @@ h3.subhead {
 .betfeed li:last-child { border-bottom: 0; }
 
 /* tables */
-.table-list, .table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.table-list th, .table th {
+.table-list { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-list th {
   font-family: var(--pixel); font-size: 10px; text-transform: uppercase; text-align: left;
   border-bottom: 2px solid var(--ink); padding: .3rem .4rem;
 }
-.table-list td, .table td { border-bottom: 1px dotted var(--ink); padding: .45rem .4rem; }
-.table .num, .table-list .num { text-align: right; font-size: 12px; }
+.table-list td { border-bottom: 1px dotted var(--ink); padding: .45rem .4rem; }
+.table-list .num { text-align: right; font-size: 12px; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover { background-image: var(--st1); }
 tr.inactive { opacity: .45; }
@@ -450,12 +450,12 @@ tr.inactive { opacity: .45; }
 /* ============ responsive ============ */
 
 @media (max-width: 1150px) {
-  .table { grid-template-columns: 170px minmax(0, 1fr); }
+  .tabletop { grid-template-columns: 170px minmax(0, 1fr); }
   .rail { grid-column: 1 / -1; flex-direction: row; position: static; }
   .rail .widget { flex: 1; }
 }
 @media (max-width: 760px) {
-  .table { grid-template-columns: 1fr; padding: 12px; gap: 14px; }
+  .tabletop { grid-template-columns: 1fr; padding: 12px; gap: 14px; }
   .contents { position: static; order: 2; }
   .rail { flex-direction: column; order: 3; }
   .card { order: 1; }

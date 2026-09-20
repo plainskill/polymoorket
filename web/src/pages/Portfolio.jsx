@@ -29,7 +29,7 @@ function PosTable({ title, rows }) {
   return (
     <>
       <h3 className="subhead">{title}</h3>
-      <table className="table">
+      <table className="table-list">
         <thead><tr><th>moorket</th><th>backed</th><th className="num">staked</th><th className="num">state</th></tr></thead>
         <tbody>
           {rows.map(p => {

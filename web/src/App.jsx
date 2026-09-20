@@ -90,7 +90,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="table">
+        <div className="tabletop">
           <aside className="contents">
             <div className="contents-head">stack contents<span>{nav.length} cards</span></div>
             <ol>
