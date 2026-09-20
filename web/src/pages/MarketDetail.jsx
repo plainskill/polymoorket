@@ -97,14 +97,16 @@ function OutcomeRow({ o, i, market, onBet }) {
         <span className="dim">pool ₿{o.pool}{o.my_stake > 0 && <> · mine ₿{o.my_stake}</>}</span>
         {o.odds && <span className="dim">pays {o.odds.toFixed(2)}×</span>}
       </div>
-      {open && (
+      {open && (o.blocked ? (
+        <p className="barred-note">✕ barred{o.block_note ? ` — ${o.block_note}` : ' — the house reckons you know too much'}</p>
+      ) : (
         <form className="stake" onSubmit={(e) => { e.preventDefault(); onBet(Number(amount)); setAmount(''); }}>
           <input type="number" min="1" max={user.balance} placeholder="stake" value={amount}
                  onChange={e => setAmount(e.target.value)} />
           <button type="submit" disabled={!Number(amount)}>stake it</button>
           {myReturn !== null && <span className="dim ret">→ ₿{myReturn} if {o.label}</span>}
         </form>
-      )}
+      ))}
     </div>
   );
 }

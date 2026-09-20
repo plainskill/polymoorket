@@ -73,7 +73,13 @@ function AdminMarkets() {
                   return who ? `restricted → ${who}` : 'restricted → nobody can see this!';
                 })()}
               </span>
+              {m.blocks.length > 0 && (
+                <span className="dim">
+                  barred: {m.blocks.map(b => `${b.username || `[${b.group_name}]`} ✕ ${b.outcome_label || 'all outcomes'}`).join(', ')}
+                </span>
+              )}
               <VisibilityEditor m={m} users={users} groups={groups} onDone={load} />
+              <BlockEditor m={m} users={users} groups={groups} onDone={load} />
             </div>
           </li>
         ))}
@@ -104,6 +110,64 @@ function VisibilityEditor({ m, users, groups, onDone }) {
       </div>
       <button onClick={async () => { await api.admin.patchMarket(m.id, { user_ids: uids, group_ids: gids }); setOpen(false); onDone(); }}>save</button>
       <button className="linkish" onClick={() => setOpen(false)}>never mind</button>
+    </div>
+  );
+}
+
+function BlockEditor({ m, users, groups, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [who, setWho] = useState('');        // 'u:ID' punter or 'g:ID' ring
+  const [outcomeId, setOutcomeId] = useState(''); // '' bars every outcome
+  const [note, setNote] = useState('');
+  const [err, setErr] = useState('');
+  if (!open) return <button className="linkish" onClick={() => setOpen(true)}>bar punters</button>;
+  const [kind, id] = who.split(':');
+  return (
+    <div className="visedit">
+      <span className="dim">Barring stops a punter — or a whole ring — staking on an outcome. Slips already in the book stand.</span>
+      {m.blocks.length > 0 && (
+        <div className="vischecks">
+          {m.blocks.map(b => (
+            <span key={b.id} className="chip">
+              {b.username || `[${b.group_name}]`} ✕ {b.outcome_label || 'all outcomes'}
+              {b.note && <i className="dim"> — {b.note}</i>}
+              <button className="linkish danger" onClick={async () => { await api.admin.delBlock(m.id, b.id); onDone(); }}>lift</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="admin-row">
+        <select value={who} onChange={e => setWho(e.target.value)}>
+          <option value="">punter or ring…</option>
+          <optgroup label="punters">
+            {users.map(u => <option key={u.id} value={`u:${u.id}`}>{u.username}</option>)}
+          </optgroup>
+          {groups.length > 0 && (
+            <optgroup label="rings">
+              {groups.map(g => <option key={g.id} value={`g:${g.id}`}>[{g.name}]</option>)}
+            </optgroup>
+          )}
+        </select>
+        <select value={outcomeId} onChange={e => setOutcomeId(e.target.value)}>
+          <option value="">all outcomes</option>
+          {m.outcomes.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+        </select>
+        <input placeholder="charge sheet (optional)" value={note} onChange={e => setNote(e.target.value)} />
+        <button onClick={async () => {
+          if (!who) { setErr('pick someone to bar'); return; }
+          try {
+            await api.admin.addBlock(m.id, {
+              user_id: kind === 'u' ? Number(id) : undefined,
+              group_id: kind === 'g' ? Number(id) : undefined,
+              outcome_id: outcomeId ? Number(outcomeId) : undefined,
+              note,
+            });
+            setWho(''); setOutcomeId(''); setNote(''); setErr(''); onDone();
+          } catch (e2) { setErr(e2.message); }
+        }}>bar them</button>
+        <button className="linkish" onClick={() => setOpen(false)}>never mind</button>
+      </div>
+      {err && <span className="err">{err}</span>}
     </div>
   );
 }

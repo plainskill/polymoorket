@@ -68,20 +68,43 @@ function marketVisibleTo(marketId, user) {
   return !!viaGroup;
 }
 
+// insider bars: a market_blocks row with outcome_id NULL bars every outcome.
+// matches a user directly, or via a ring they sit in.
+const blocksStmt = db.prepare(
+  `SELECT mb.outcome_id, mb.note FROM market_blocks mb
+   LEFT JOIN group_members gm ON gm.group_id = mb.group_id AND gm.user_id = ?
+   WHERE mb.market_id = ? AND (mb.user_id = ? OR gm.user_id IS NOT NULL)`
+);
+
+function blocksFor(marketId, userId) {
+  const rows = blocksStmt.all(userId, marketId, userId);
+  return {
+    all: rows.some(r => r.outcome_id === null),
+    byOutcome: new Map(rows.filter(r => r.outcome_id !== null).map(r => [r.outcome_id, r.note])),
+    note: rows.find(r => r.note)?.note || '',
+  };
+}
+
 function shapeMarket(m, user) {
   const outcomes = poolStmt.all(user.id, m.id);
   const total = outcomes.reduce((s, o) => s + o.pool, 0);
   const bettors = db.prepare('SELECT COUNT(DISTINCT user_id) c FROM bets WHERE market_id = ?').get(m.id).c;
+  const blocks = blocksFor(m.id, user.id);
   return {
     id: m.id, number: m.number, title: m.title, description: m.description,
     status: m.status, visibility: m.visibility, closes_at: normTs(m.closes_at),
     created_at: m.created_at, resolved_at: m.resolved_at, resolution_note: m.resolution_note,
     winning_outcome_id: m.winning_outcome_id, total_pool: total, bettors,
-    outcomes: outcomes.map(o => ({
-      ...o,
-      implied: total > 0 ? o.pool / total : null,
-      odds: o.pool > 0 ? total / o.pool : null, // return multiple per beetcoin staked
-    })),
+    outcomes: outcomes.map(o => {
+      const blocked = blocks.all || blocks.byOutcome.has(o.id);
+      return {
+        ...o,
+        blocked,
+        block_note: blocked ? (blocks.byOutcome.get(o.id) || blocks.note) : '',
+        implied: total > 0 ? o.pool / total : null,
+        odds: o.pool > 0 ? total / o.pool : null, // return multiple per beetcoin staked
+      };
+    }),
   };
 }
 
@@ -142,8 +165,13 @@ app.post('/api/markets/:id/bets', requireUser, (req, res) => {
   const amount = Math.floor(Number(req.body?.amount));
   const outcomeId = Number(req.body?.outcome_id);
   if (!Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: 'Stake must be a positive whole number of beetcoin' });
-  const outcome = db.prepare('SELECT id FROM outcomes WHERE id = ? AND market_id = ?').get(outcomeId, m.id);
+  const outcome = db.prepare('SELECT id, label FROM outcomes WHERE id = ? AND market_id = ?').get(outcomeId, m.id);
   if (!outcome) return res.status(400).json({ error: 'Unknown outcome' });
+  const blocks = blocksFor(m.id, req.user.id);
+  if (blocks.all || blocks.byOutcome.has(outcomeId)) {
+    const note = blocks.byOutcome.get(outcomeId) || blocks.note;
+    return res.status(403).json({ error: `Barred from "${outcome.label}" on this moorket${note ? ` — ${note}` : ' — the house reckons you know too much'}` });
+  }
   if (req.user.balance < amount) return res.status(402).json({ error: `Not enough beetcoin — you have ${req.user.balance}` });
 
   const place = db.transaction(() => {
@@ -381,6 +409,15 @@ app.get('/api/admin/markets', requireAdmin, (req, res) => {
     const s = shapeMarket(m, req.user);
     s.allowed_users = db.prepare('SELECT u.id, u.username FROM market_users mu JOIN users u ON u.id=mu.user_id WHERE mu.market_id=?').all(m.id);
     s.allowed_groups = db.prepare('SELECT g.id, g.name FROM market_groups mg JOIN groups g ON g.id=mg.group_id WHERE mg.market_id=?').all(m.id);
+    s.blocks = db.prepare(
+      `SELECT mb.id, mb.outcome_id, mb.user_id, mb.group_id, mb.note,
+              u.username, g.name group_name, o.label outcome_label
+       FROM market_blocks mb
+       LEFT JOIN users u ON u.id = mb.user_id
+       LEFT JOIN groups g ON g.id = mb.group_id
+       LEFT JOIN outcomes o ON o.id = mb.outcome_id
+       WHERE mb.market_id = ? ORDER BY mb.id`
+    ).all(m.id);
     return s;
   });
   res.json({ markets: shaped });
@@ -437,6 +474,31 @@ app.patch('/api/admin/markets/:id', requireAdmin, (req, res) => {
     db.prepare('DELETE FROM market_groups WHERE market_id = ?').run(m.id);
     group_ids.forEach(gid => db.prepare('INSERT OR IGNORE INTO market_groups (market_id, group_id) VALUES (?,?)').run(m.id, gid));
   }
+  res.json({ ok: true });
+});
+
+// insider bars — stop a punter or a ring staking on an outcome (or all of them)
+app.post('/api/admin/markets/:id/blocks', requireAdmin, (req, res) => {
+  const m = db.prepare('SELECT id FROM markets WHERE id = ?').get(req.params.id);
+  if (!m) return res.status(404).json({ error: 'Moorket not found' });
+  const outcomeId = req.body?.outcome_id ? Number(req.body.outcome_id) : null;
+  const userId = req.body?.user_id ? Number(req.body.user_id) : null;
+  const groupId = req.body?.group_id ? Number(req.body.group_id) : null;
+  const note = String(req.body?.note || '').trim().slice(0, 140);
+  if (!!userId === !!groupId) return res.status(400).json({ error: 'Bar a punter or a ring — one, not both' });
+  if (outcomeId && !db.prepare('SELECT 1 FROM outcomes WHERE id = ? AND market_id = ?').get(outcomeId, m.id))
+    return res.status(400).json({ error: 'Unknown outcome' });
+  if (userId && !db.prepare('SELECT 1 FROM users WHERE id = ?').get(userId))
+    return res.status(400).json({ error: 'Unknown punter' });
+  if (groupId && !db.prepare('SELECT 1 FROM groups WHERE id = ?').get(groupId))
+    return res.status(400).json({ error: 'Unknown ring' });
+  db.prepare('INSERT INTO market_blocks (market_id, outcome_id, user_id, group_id, note) VALUES (?,?,?,?,?)')
+    .run(m.id, outcomeId, userId, groupId, note);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/markets/:id/blocks/:bid', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM market_blocks WHERE id = ? AND market_id = ?').run(req.params.bid, req.params.id);
   res.json({ ok: true });
 });
 

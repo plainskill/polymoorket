@@ -349,6 +349,11 @@ h3.subhead {
 .stake { display: flex; gap: .6rem; margin-top: .55rem; align-items: center; }
 .stake input { width: 110px; flex: none; }
 .stake .ret { font-size: 12px; }
+.barred-note {
+  margin: .55rem 0 0; font-family: var(--pixel); font-size: 11px; text-transform: uppercase;
+  border: 1.5px dotted var(--ink); border-radius: var(--wob4); padding: .35em .7em;
+  display: inline-block;
+}
 
 .suggest-res, .admin-box {
   border: 2px solid var(--ink); border-radius: var(--wob3);

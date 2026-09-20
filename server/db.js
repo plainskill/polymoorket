@@ -78,6 +78,16 @@ CREATE TABLE IF NOT EXISTS market_groups (
   group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   PRIMARY KEY (market_id, group_id)
 );
+CREATE TABLE IF NOT EXISTS market_blocks (
+  id INTEGER PRIMARY KEY,
+  market_id INTEGER NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
+  outcome_id INTEGER REFERENCES outcomes(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+  note TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  CHECK (user_id IS NOT NULL OR group_id IS NOT NULL)
+);
 CREATE TABLE IF NOT EXISTS bets (
   id INTEGER PRIMARY KEY,
   market_id INTEGER NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
