@@ -384,10 +384,20 @@ app.post('/api/admin/markets/:id/resolve', requireAdmin, (req, res) => {
   if (m.status === 'resolved' || m.status === 'cancelled') return res.status(409).json({ error: `Already ${m.status}` });
   const outcomeId = Number(req.body?.outcome_id);
   const note = String(req.body?.note || '').trim();
+  const asOf = req.body?.as_of ? String(req.body.as_of) : null;
   const outcome = db.prepare('SELECT * FROM outcomes WHERE id = ? AND market_id = ?').get(outcomeId, m.id);
   if (!outcome) return res.status(400).json({ error: 'Unknown outcome' });
+  if (asOf && isNaN(new Date(asOf))) return res.status(400).json({ error: 'Bad as_of time' });
 
   const resolve = db.transaction(() => {
+    if (asOf) {
+      // stakes placed after the cutoff never happened — erase and refund
+      const late = db.prepare(
+        `SELECT id, user_id, amount FROM bets WHERE market_id = ? AND datetime(created_at) > datetime(?)`
+      ).all(m.id, asOf);
+      for (const b of late) credit(b.user_id, b.amount, 'refund', m.number, `${m.title} — staked after cutoff, erased`);
+      db.prepare(`DELETE FROM bets WHERE market_id = ? AND datetime(created_at) > datetime(?)`).run(m.id, asOf);
+    }
     const bets = db.prepare('SELECT user_id, SUM(amount) staked FROM bets WHERE market_id = ? GROUP BY user_id').all(m.id);
     const total = bets.reduce((s, b) => s + b.staked, 0);
     const winning = bets.filter(b => db.prepare('SELECT 1 FROM bets WHERE market_id=? AND outcome_id=? AND user_id=?')

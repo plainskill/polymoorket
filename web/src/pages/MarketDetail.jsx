@@ -139,6 +139,7 @@ function SuggestResolution({ market, onDone }) {
 function AdminControls({ market, onDone }) {
   const [outcomeId, setOutcomeId] = useState('');
   const [note, setNote] = useState('');
+  const [asOf, setAsOf] = useState('');
   const [msg, setMsg] = useState('');
   if (market.status === 'resolved' || market.status === 'cancelled') return null;
   return (
@@ -155,7 +156,10 @@ function AdminControls({ market, onDone }) {
       </div>
       <form className="admin-row" onSubmit={async (e) => {
         e.preventDefault();
-        try { await api.admin.resolve(market.id, Number(outcomeId), note); onDone(); }
+        try {
+          if (asOf && !confirm(`Stakes placed after ${new Date(asOf).toLocaleString()} will be erased and refunded. Resolve anyway?`)) return;
+          await api.admin.resolve(market.id, Number(outcomeId), note, asOf ? new Date(asOf).toISOString() : null); onDone();
+        }
         catch (e2) { setMsg(e2.message); }
       }}>
         <select value={outcomeId} onChange={e => setOutcomeId(e.target.value)} required>
@@ -163,6 +167,7 @@ function AdminControls({ market, onDone }) {
           {market.outcomes.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
         </select>
         <input placeholder="resolution note" value={note} onChange={e => setNote(e.target.value)} />
+        <input type="datetime-local" title="erase stakes after this time (optional)" value={asOf} onChange={e => setAsOf(e.target.value)} />
         <button type="submit" className="danger">resolve & pay out</button>
         {msg && <span className="err">{msg}</span>}
       </form>
