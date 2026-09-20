@@ -208,6 +208,11 @@ function Punters() {
                 <button className="linkish danger" onClick={async () => {
                   await api.admin.patchUser(u.id, { active: !u.active }); load();
                 }}>{u.active ? 'bar' : 'readmit'}</button>
+                <button className="linkish danger" onClick={async () => {
+                  if (!confirm(`Delete ${u.username} for good? Their slips, ledger and suggestions go with them; their moorkets stay.`)) return;
+                  try { await api.admin.deleteUser(u.id); load(); }
+                  catch (e2) { alert(e2.message); }
+                }}>delete</button>
               </span>
             </div>
           </li>

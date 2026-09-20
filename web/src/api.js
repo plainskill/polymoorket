@@ -29,6 +29,7 @@ export const api = {
     users: () => req('/admin/users'),
     createUser: (body) => req('/admin/users', { method: 'POST', body }),
     patchUser: (id, body) => req(`/admin/users/${id}`, { method: 'PATCH', body }),
+    deleteUser: (id) => req(`/admin/users/${id}`, { method: 'DELETE' }),
     createGroup: (name) => req('/admin/groups', { method: 'POST', body: { name } }),
     deleteGroup: (id) => req(`/admin/groups/${id}`, { method: 'DELETE' }),
     member: (gid, user_id, remove) => req(`/admin/groups/${gid}/members`, { method: 'POST', body: { user_id, remove } }),

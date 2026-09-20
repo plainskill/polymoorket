@@ -273,6 +273,22 @@ app.patch('/api/admin/users/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (u.id === req.user.id) return res.status(409).json({ error: 'You can\'t delete yourself — bar yourself instead' });
+  if (u.role === 'admin' && db.prepare(`SELECT COUNT(*) c FROM users WHERE role='admin'`).get().c <= 1) {
+    return res.status(409).json({ error: 'Can\'t delete the last admin' });
+  }
+  const del = db.transaction(() => {
+    // moorkets survive their creator; suggestions, slips, ledger, sessions cascade
+    db.prepare('UPDATE markets SET created_by = NULL WHERE created_by = ?').run(u.id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(u.id);
+  });
+  del();
+  res.json({ ok: true });
+});
+
 // groups
 app.post('/api/admin/groups', requireAdmin, (req, res) => {
   const name = String(req.body?.name || '').trim();
