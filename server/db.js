@@ -3,8 +3,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(process.cwd(), 'data'));
-fs.mkdirSync(DATA_DIR, { recursive: true });
+function pickDataDir() {
+  const candidates = [process.env.DATA_DIR, '/data', path.join(process.cwd(), 'data')].filter(Boolean);
+  for (const dir of candidates) {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.accessSync(dir, fs.constants.W_OK);
+      return dir;
+    } catch {}
+  }
+  return path.join(process.cwd(), 'data');
+}
+
+const DATA_DIR = pickDataDir();
+console.log(`[polymoorket] data dir: ${DATA_DIR}`);
 
 export const db = new Database(path.join(DATA_DIR, 'polymoorket.db'));
 db.pragma('journal_mode = WAL');

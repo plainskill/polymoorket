@@ -16,6 +16,8 @@ ENV NODE_ENV=production \
 
 EXPOSE 3000
 
-# shipd bind-mounts persistent storage at /data; run as node user
+# shipd bind-mounts persistent storage at /data (group-writable, node joins via
+# --group-add); pre-create it owned by node so boot still works unmounted
+RUN mkdir -p /data /app/data && chown node:node /data /app/data
 USER node
 CMD ["node", "server/index.js"]
